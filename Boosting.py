@@ -3,9 +3,10 @@ from copy import deepcopy
 
 
 class Adaboost():
-    def __init__(self, base_clf, num_esti):
+    def __init__(self, base_clf, num_esti, learning_rate=1):
         self.base_clf = base_clf
         self.num_esti = num_esti
+        self.learning_rate = learning_rate
         self.dict_clf = {}
         self.dict_err = {}
         self.dict_alpha = {}
@@ -40,6 +41,7 @@ class Adaboost():
         list_pred = []
         pred_ada = 0
         for num_tmp in range(self.num_esti):
-            pred_ada += self.dict_clf[num_tmp].predict(X_test) * self.dict_alpha[num_tmp]
+            pred_ada += self.dict_clf[num_tmp].predict(X_test) * self.dict_alpha[num_tmp] *\
+                        self.learning_rate
             list_pred.append(((pred_ada>0).astype(int) - 0.5) * 2)
         return list_pred
