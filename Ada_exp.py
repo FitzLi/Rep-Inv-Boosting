@@ -1,7 +1,9 @@
 import numpy as np
-from sklearn.ensemble import AdaBoostClassifier
+# from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
+from Boosting import Adaboost
+
 
 class Adaboost_exp():
     """ Replication of experiments from "Evidence Contrary to the Statistical View of Boosting" section 3
@@ -61,16 +63,20 @@ class Adaboost_exp():
         np.random.seed(self.random_state)
         return np.random.rand(num_obs, self.dim_input)
         
-    def generate_label(self, X):
+    def generate_label(self, X, return_binary=False):
         np.random.seed(self.random_state)
         if self.dim_rele == 0:
             indicator = np.zeros(X.shape[0])
         else:
             indicator = (X[ : , : self.dim_rele].sum(axis=1) > self.dim_rele / 2).astype(int)
         class_prob = self.bayes_err + (1 - 2 * self.bayes_err) * indicator
-        return (class_prob > np.random.rand(X.shape[0])).astype(int)
+        class_binary = (class_prob > np.random.rand(X.shape[0])).astype(int)
+        if return_binary:
+            return class_binary
+        else:
+            return (class_binary - 0.5) * 2
     
-    def generate_dateset(self, dataset_type):
+    def generate_dateset(self, dataset_type, return_binary=False):
         self.random_state += 1
         if dataset_type == 'train':
             X = self.generate_input(self.num_train)
@@ -78,7 +84,7 @@ class Adaboost_exp():
             X = self.generate_input(self.num_test)
         else:
             raise("What you want?")
-        y = self.generate_label(X)
+        y = self.generate_label(X, return_binary)
         return X, y
     
     def generate_clf(self):
@@ -89,8 +95,7 @@ class Adaboost_exp():
                     name_clf = "node_" + str(n_node) + "_minobs_" + str(n_obs) + "_shrink_" + str(shrink)
                     clf_b = self.clf_base(max_leaf_nodes=n_node, min_samples_leaf=n_obs,
                                           random_state=self.random_state)
-                    clf_ada = AdaBoostClassifier(base_estimator=clf_b, learning_rate=shrink,
-                                                 n_estimators=self.num_iter, algorithm='SAMME')
+                    clf_ada = Adaboost(base_clf=clf_b, num_esti=self.num_iter, learning_rate=shrink)
                     self.dict_clfs[name_clf] = clf_ada
                     
     def run(self):
